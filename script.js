@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- 수정된 부분 ---
     // 트리맵 차트: 타입 및 등급별 분포 (JSON 데이터 사용)
     function createTreemapChart(data) {
         const ctx = document.getElementById('treemapChart').getContext('2d');
@@ -208,14 +209,23 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 datasets: [{
                     label: '콘텐츠 분포',
-                    tree: data.children,
-                    key: 'value',
-                    groups: ['name'],
-                    backgroundColor: (ctx) => {
-                        const node = ctx.raw.g;
-                        if (!node) return 'rgba(150, 150, 150, 0.7)';
-                        if (node === 'Movie') return 'rgba(210, 45, 45, 0.8)';
-                        if (node === 'TV Show') return 'rgba(54, 54, 54, 0.8)';
+                    tree: data.children, // 'children' 배열을 직접 데이터 트리로 사용
+                    key: 'value',      // 각 항목의 크기는 'value' 키를 사용
+                    // 'groups' 옵션 제거: 데이터가 이미 계층적이므로 불필요함
+                    backgroundColor: (context) => {
+                        if (context.type !== 'node') return;
+                        const node = context.raw;
+                        // 최상위 노드 (Movie, TV Show)에 따라 색상 결정
+                        if (node.parent === 'netflix') {
+                            return node.g === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
+                        }
+                        // 하위 노드 (Ratings)는 상위 노드 색상을 기준으로 약간 연하게 처리
+                        if (node.parent === 'Movie') {
+                            return 'rgba(210, 45, 45, 0.6)';
+                        }
+                        if (node.parent === 'TV Show') {
+                            return 'rgba(54, 54, 54, 0.6)';
+                        }
                         return 'rgba(180, 180, 180, 0.7)';
                     },
                     borderColor: 'rgba(255, 255, 255, 0.9)',
@@ -244,21 +254,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 선버스트 차트: 타입 및 등급별 분포 (JSON 데이터 사용)
     function createSunburstChart(data) {
+        // Chart.js Sunburst 플러그인은 'name' 대신 'label'을 사용하므로, 데이터를 변환해줍니다.
+        const transformData = (node) => {
+            const newNode = { label: node.name };
+            if (node.children) {
+                newNode.children = node.children.map(transformData);
+            } else {
+                newNode.value = node.value;
+            }
+            return newNode;
+        };
+        const chartData = data.children.map(transformData);
+
         const ctx = document.getElementById('sunburstChart').getContext('2d');
         new Chart(ctx, {
             type: 'sunburst',
             data: {
-                labels: data.children.map(d => d.name),
+                labels: chartData.map(d => d.label),
                 datasets: [{
                     label: '콘텐츠 분포',
-                    data: data.children,
-                    backgroundColor: (ctx) => {
-                        const node = ctx.raw.parent;
-                        if (!node) { // 최상위 레벨 (Movie, TV Show)
-                            return ctx.raw.label === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
+                    data: chartData,
+                    backgroundColor: (context) => {
+                        const node = context.raw;
+                        if (!node) return null;
+                        // 최상위 레벨 (Movie, TV Show)
+                        if (!node.parent) {
+                            return node.label === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
                         }
                         // 하위 레벨 (Ratings)
-                        return node.label === 'Movie' ? 'rgba(210, 45, 45, 0.6)' : 'rgba(54, 54, 54, 0.6)';
+                        return node.parent.label === 'Movie' ? 'rgba(210, 45, 45, 0.6)' : 'rgba(54, 54, 54, 0.6)';
                     },
                     borderColor: 'rgba(255, 255, 255, 0.9)',
                 }]
