@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 1,
                     borderColor: 'rgba(255, 255, 255, 0.9)',
                     backgroundColor: (context) => {
-                        if (context.type !== 'node') return;
+                        if (context.type !== 'node' || !context.raw) return;
                         const node = context.raw;
                         const parentName = node.parent;
                         if (parentName === 'netflix') {
@@ -185,7 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.raw.g}: ${context.raw.v.toLocaleString()}`
+                            label: (context) => {
+                                const { g, v } = context.raw;
+                                return g ? `${g}: ${v.toLocaleString()}` : '';
+                            }
                         }
                     }
                 }
@@ -226,7 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (context) => `${context.raw.g}: ${context.raw.v.toLocaleString()}`
+                            label: (context) => {
+                                const { g, v } = context.raw;
+                                return g ? `${g}: ${v.toLocaleString()}` : '';
+                            }
                         }
                     }
                 }
