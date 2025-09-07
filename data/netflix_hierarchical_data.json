@@ -1,0 +1,119 @@
+{
+  "name": "netflix",
+  "children": [
+    {
+      "name": "Movie",
+      "children": [
+        {
+          "name": "TV-MA",
+          "value": 2062
+        },
+        {
+          "name": "TV-14",
+          "value": 1427
+        },
+        {
+          "name": "R",
+          "value": 797
+        },
+        {
+          "name": "TV-PG",
+          "value": 540
+        },
+        {
+          "name": "PG-13",
+          "value": 490
+        },
+        {
+          "name": "PG",
+          "value": 287
+        },
+        {
+          "name": "TV-Y7",
+          "value": 139
+        },
+        {
+          "name": "TV-Y",
+          "value": 131
+        },
+        {
+          "name": "TV-G",
+          "value": 126
+        },
+        {
+          "name": "NR",
+          "value": 75
+        },
+        {
+          "name": "G",
+          "value": 41
+        },
+        {
+          "name": "TV-Y7-FV",
+          "value": 5
+        },
+        {
+          "name": "NC-17",
+          "value": 3
+        },
+        {
+          "name": "UR",
+          "value": 3
+        },
+        {
+          "name": "74 min",
+          "value": 1
+        },
+        {
+          "name": "84 min",
+          "value": 1
+        },
+        {
+          "name": "66 min",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "name": "TV Show",
+      "children": [
+        {
+          "name": "TV-MA",
+          "value": 1145
+        },
+        {
+          "name": "TV-14",
+          "value": 733
+        },
+        {
+          "name": "TV-PG",
+          "value": 323
+        },
+        {
+          "name": "TV-Y7",
+          "value": 195
+        },
+        {
+          "name": "TV-Y",
+          "value": 176
+        },
+        {
+          "name": "TV-G",
+          "value": 94
+        },
+        {
+          "name": "NR",
+          "value": 5
+        },
+        {
+          "name": "R",
+          "value": 2
+        },
+        {
+          "name": "TV-Y7-FV",
+          "value": 1
+        }
+      ]
+    }
+  ]
+}

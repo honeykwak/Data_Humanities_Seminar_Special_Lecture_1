@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-sunburst@1.2.0/dist/chartjs-chart-sunburst.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
 </head>
 <body>
@@ -69,23 +70,34 @@
                 </div>
             </article>
 
+            <article>
+                <h3>선버스트 (Sunburst): 계층 구조 데이터 시각화</h3>
+                <p><strong>"콘텐츠 타입별, 그리고 그 안에서의 등급별 분포는?"</strong> 트리맵과 유사하지만, 계층 구조를 원형으로 표현하여 전체 대비 각 부분의 비율을 더 직관적으로 보여줍니다.</p>
+                <div class="chart-container">
+                    <canvas id="sunburstChart"></canvas>
+                </div>
+            </article>
+
             <pre><code class="language-json">
-[
-  {
-    "type": "Movie",
-    "ratings": [
-      { "rating": "PG-13", "count": 490 },
-      { "rating": "R", "count": 799 }
-    ]
-  },
-  {
-    "type": "TV Show",
-    "ratings": [
-      { "rating": "TV-MA", "count": 1145 },
-      { "rating": "TV-14", "count": 733 }
-    ]
-  }
-]
+{
+  "name": "netflix",
+  "children": [
+    {
+      "name": "Movie",
+      "children": [
+        { "name": "TV-MA", "value": 2027 },
+        { "name": "TV-14", "value": 1427 }
+      ]
+    },
+    {
+      "name": "TV Show",
+      "children": [
+        { "name": "R", "value": 797 },
+        { "name": "PG-13", "value": 490 }
+      ]
+    }
+  ]
+}
             </code></pre>
             <p><strong>JSON(JavaScript Object Notation)</strong>은 웹에서 데이터를 주고받을 때 표준처럼 사용되며, 트리맵, 네트워크 그래프 등 중첩된 구조를 시각화할 때 매우 편리합니다.</p>
         </section>
