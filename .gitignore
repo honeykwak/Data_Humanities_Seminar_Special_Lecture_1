@@ -1,2 +1,1 @@
-# Ignore data directory
-data/
+# .gitignore is now empty to allow tracking of the data file
