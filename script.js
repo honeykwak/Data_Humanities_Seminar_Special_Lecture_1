@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 차트 생성 함수들 ---
 
-    // 막대 차트: 국가별 콘텐츠 수 (상위 10개국)
     function createBarChart(data) {
         const countryCounts = data.reduce((acc, row) => {
             if (row.country) {
@@ -54,11 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return acc;
         }, {});
-
-        const sortedCountries = Object.entries(countryCounts)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 10);
-
+        const sortedCountries = Object.entries(countryCounts).sort(([, a], [, b]) => b - a).slice(0, 10);
         const ctx = document.getElementById('barChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -72,21 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: '국가별 콘텐츠 수 (상위 10개국)' }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '국가별 콘텐츠 수 (상위 10개국)' } }, scales: { y: { beginAtZero: true } } }
         });
     }
 
-    // 선형 차트: 연도별 콘텐츠 출시량 (2000년 이후)
     function createLineChart(data) {
         const yearCounts = data.reduce((acc, row) => {
             const year = parseInt(row.release_year, 10);
@@ -95,9 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return acc;
         }, {});
-
         const sortedYears = Object.entries(yearCounts).sort(([a], [b]) => a - b);
-
         const ctx = document.getElementById('lineChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
@@ -111,18 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     tension: 0.1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: '연도별 콘텐츠 출시량 (2000년 이후)' }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '연도별 콘텐츠 출시량 (2000년 이후)' } } }
         });
     }
 
-    // 원형 차트: Movie vs TV Show 비율
     function createPieChart(data) {
         const typeCounts = data.reduce((acc, row) => {
             if (row.type) {
@@ -130,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return acc;
         }, {});
-
         const ctx = document.getElementById('pieChart').getContext('2d');
         new Chart(ctx, {
             type: 'pie',
@@ -143,35 +116,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: 'Movie vs TV Show 비율' }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Movie vs TV Show 비율' } } }
         });
     }
 
-    // 히스토그램: 영화 상영 시간 분포
     function createHistogram(data) {
-        const durations = data
-            .filter(row => row.type === 'Movie' && row.duration)
-            .map(row => parseInt(row.duration.replace(' min', ''), 10))
-            .filter(d => !isNaN(d));
-
+        const durations = data.filter(row => row.type === 'Movie' && row.duration).map(row => parseInt(row.duration.replace(' min', ''), 10)).filter(d => !isNaN(d));
         const bins = {};
         const binWidth = 10;
         durations.forEach(duration => {
             const bin = Math.floor(duration / binWidth) * binWidth;
             bins[bin] = (bins[bin] || 0) + 1;
         });
-
         const sortedBins = Object.entries(bins).sort(([a], [b]) => parseInt(a) - parseInt(b));
-        
         const labels = sortedBins.map(([bin]) => `${bin}-${parseInt(bin) + binWidth -1} min`);
         const binData = sortedBins.map(([, count]) => count);
-
         const ctx = document.getElementById('histogramChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -185,23 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: '영화 상영 시간 분포 (분)' }
-                },
-                scales: {
-                    x: { ticks: { maxRotation: 90, minRotation: 45 } },
-                    y: { beginAtZero: true }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '영화 상영 시간 분포 (분)' } }, scales: { x: { ticks: { maxRotation: 90, minRotation: 45 } }, y: { beginAtZero: true } } }
         });
     }
 
-    // --- 수정된 부분 ---
-    // 트리맵 차트: 타입 및 등급별 분포 (JSON 데이터 사용)
+    // --- 최종 수정된 부분 ---
+    // 트리맵 및 선버스트 차트 생성 (완전한 JSON 데이터 사용)
     function createTreemapChart(data) {
         const ctx = document.getElementById('treemapChart').getContext('2d');
         new Chart(ctx, {
@@ -209,29 +157,25 @@ document.addEventListener('DOMContentLoaded', () => {
             data: {
                 datasets: [{
                     label: '콘텐츠 분포',
-                    tree: data.children, // 'children' 배열을 직접 데이터 트리로 사용
-                    key: 'value',      // 각 항목의 크기는 'value' 키를 사용
-                    // 'groups' 옵션 제거: 데이터가 이미 계층적이므로 불필요함
+                    tree: data.children,
+                    key: 'value',
+                    spacing: 1,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.9)',
                     backgroundColor: (context) => {
                         if (context.type !== 'node') return;
                         const node = context.raw;
-                        // 최상위 노드 (Movie, TV Show)에 따라 색상 결정
-                        if (node.parent === 'netflix') {
+                        const parentName = node.parent;
+                        if (parentName === 'netflix') {
                             return node.g === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
-                        }
-                        // 하위 노드 (Ratings)는 상위 노드 색상을 기준으로 약간 연하게 처리
-                        if (node.parent === 'Movie') {
+                        } else if (parentName === 'Movie') {
                             return 'rgba(210, 45, 45, 0.6)';
-                        }
-                        if (node.parent === 'TV Show') {
+                        } else if (parentName === 'TV Show') {
                             return 'rgba(54, 54, 54, 0.6)';
                         }
                         return 'rgba(180, 180, 180, 0.7)';
-                    },
-                    borderColor: 'rgba(255, 255, 255, 0.9)',
-                    borderWidth: 1,
-                    spacing: 1,
-                }],
+                    }
+                }]
             },
             options: {
                 responsive: true,
@@ -241,10 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const item = context.raw;
-                                return `${item.g}: ${item.v.toLocaleString()}`;
-                            }
+                            label: (context) => `${context.raw.g}: ${context.raw.v.toLocaleString()}`
                         }
                     }
                 }
@@ -252,39 +193,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 선버스트 차트: 타입 및 등급별 분포 (JSON 데이터 사용)
     function createSunburstChart(data) {
-        // Chart.js Sunburst 플러그인은 'name' 대신 'label'을 사용하므로, 데이터를 변환해줍니다.
-        const transformData = (node) => {
-            const newNode = { label: node.name };
-            if (node.children) {
-                newNode.children = node.children.map(transformData);
-            } else {
-                newNode.value = node.value;
-            }
-            return newNode;
-        };
-        const chartData = data.children.map(transformData);
-
         const ctx = document.getElementById('sunburstChart').getContext('2d');
         new Chart(ctx, {
             type: 'sunburst',
             data: {
-                labels: chartData.map(d => d.label),
                 datasets: [{
                     label: '콘텐츠 분포',
-                    data: chartData,
+                    tree: data.children,
+                    key: 'value',
                     backgroundColor: (context) => {
                         const node = context.raw;
                         if (!node) return null;
-                        // 최상위 레벨 (Movie, TV Show)
-                        if (!node.parent) {
-                            return node.label === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
+                        const parentName = node.parent;
+                        if (!parentName) {
+                            return node.g === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
+                        } else if (parentName === 'Movie') {
+                            return 'rgba(210, 45, 45, 0.6)';
+                        } else if (parentName === 'TV Show') {
+                            return 'rgba(54, 54, 54, 0.6)';
                         }
-                        // 하위 레벨 (Ratings)
-                        return node.parent.label === 'Movie' ? 'rgba(210, 45, 45, 0.6)' : 'rgba(54, 54, 54, 0.6)';
+                        return 'rgba(180, 180, 180, 0.7)';
                     },
-                    borderColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: 'rgba(255, 255, 255, 0.9)'
                 }]
             },
             options: {
@@ -295,10 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const item = context.raw;
-                                return `${item.label}: ${item.value.toLocaleString()}`;
-                            }
+                            label: (context) => `${context.raw.g}: ${context.raw.v.toLocaleString()}`
                         }
                     }
                 }
