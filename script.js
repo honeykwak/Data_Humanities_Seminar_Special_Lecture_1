@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         download: true,
         header: true,
         complete: (results) => {
-            const data = results.data;
+            const data = results.data.filter(row => row.type && row.rating); // Ensure type and rating exist
             console.log('Data loaded and parsed:', data);
             
             // 각 차트 생성 함수 호출
@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
             createLineChart(data);
             createPieChart(data);
             createHistogram(data);
+            createTreemapChart(data); // 트리맵 차트 함수 호출 추가
         },
         error: (error) => {
             console.error('Error parsing CSV:', error);
@@ -180,6 +181,68 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     y: {
                         beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // 트리맵 차트: 타입 및 등급별 분포
+    function createTreemapChart(data) {
+        const typeRatingCounts = data.reduce((acc, row) => {
+            const key = `${row.type} - ${row.rating}`;
+            if(row.type && row.rating) {
+                acc[key] = (acc[key] || 0) + 1;
+            }
+            return acc;
+        }, {});
+
+        const treemapData = Object.entries(typeRatingCounts).map(([key, value]) => {
+            const [type, rating] = key.split(' - ');
+            return { type, rating, value };
+        });
+
+        const ctx = document.getElementById('treemapChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'treemap',
+            data: {
+                datasets: [{
+                    label: '콘텐츠 분포',
+                    tree: treemapData,
+                    key: 'value',
+                    groups: ['type', 'rating'],
+                    backgroundColor: (ctx) => {
+                        const key = ctx.raw.g;
+                        if (key === 'Movie') return 'rgba(210, 45, 45, 0.8)';
+                        if (key === 'TV Show') return 'rgba(54, 54, 54, 0.8)';
+                        return 'rgba(150, 150, 150, 0.7)';
+                    },
+                    borderColor: 'rgba(255, 255, 255, 0.9)',
+                    borderWidth: 1,
+                    spacing: 1,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '콘텐츠 타입 및 등급별 분포'
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const item = context.raw;
+                                const value = item.v;
+                                const group = item.g;
+                                const label = item.s ? item.s.rating : group;
+                                return `${label}: ${value}`;
+                            }
+                        }
                     }
                 }
             }
