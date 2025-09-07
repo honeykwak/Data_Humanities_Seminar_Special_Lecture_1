@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => console.error('Error fetching or parsing JSON:', error));
 
-    // --- Google Charts 생성 함수 ---
+    // --- Google Charts 생성 함수 (최종 수정) ---
     function createGoogleTreemapChart(jsonData) {
         google.charts.load('current', {'packages':['treemap']});
         google.charts.setOnLoadCallback(drawChart);
@@ -39,33 +39,45 @@ document.addEventListener('DOMContentLoaded', () => {
             const dataTable = new google.visualization.DataTable();
             dataTable.addColumn('string', 'ID');
             dataTable.addColumn('string', 'Parent');
-            dataTable.addColumn('number', 'Count');
+            dataTable.addColumn('number', 'Count (for size)');
+            dataTable.addColumn('number', 'Color'); // 색상 계산을 위한 별도 열
 
-            // JSON 데이터를 Google DataTable 형식으로 변환
             const rows = [];
-            function flattenData(node, parent) {
-                rows.push([node.name, parent, node.value]);
-                if (node.children) {
-                    node.children.forEach(child => flattenData(child, node.name));
+            // 최상위 노드 추가
+            rows.push([jsonData.name, null, 0, 0]);
+
+            // 자식 노드들을 재귀적으로 추가
+            jsonData.children.forEach(typeNode => {
+                // 1레벨 노드 (Movie, TV Show)
+                rows.push([typeNode.name, jsonData.name, typeNode.value, typeNode.value]);
+                if (typeNode.children) {
+                    // 2레벨 노드 (Ratings)
+                    typeNode.children.forEach(ratingNode => {
+                        rows.push([ratingNode.name, typeNode.name, ratingNode.value, typeNode.value]);
+                    });
                 }
-            }
-            flattenData(jsonData, null);
+            });
             
             dataTable.addRows(rows);
 
             const options = {
-                minColor: '#363636',
-                midColor: '#a12424',
-                maxColor: '#d22d2d',
+                minColor: '#f0f0f0',
+                midColor: '#d22d2d',
+                maxColor: '#a12424',
                 headerHeight: 25,
                 fontColor: 'white',
                 showScale: true,
+                highlightOnMouseOver: true,
                 generateTooltip: (row, size, value) => {
                     const label = dataTable.getValue(row, 0);
+                    // 최상위 노드는 툴팁 표시 안 함
+                    if (dataTable.getValue(row, 1) === null) return '';
                     return `<div style="background:black; color:white; padding:10px; border-style:solid; border-width:1px;">
                         <b>${label}</b>: ${size.toLocaleString()}
                     </div>`;
-                }
+                },
+                // 색상은 4번째 열(Color)을 기준으로 계산
+                colorAxis: {values: [0, 2676, 6128]}, // TV Show, Movie 값 기준으로 색상 범위 설정
             };
 
             const chart = new google.visualization.TreeMap(document.getElementById('treemapChart'));
