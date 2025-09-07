@@ -2,14 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const CSV_DATA_PATH = 'data/netflix_titles.csv';
     const JSON_DATA_PATH = 'data/netflix_hierarchical_data.json';
 
-    // --- 데이터 로딩 및 차트 생성 초기화 ---
-
-    // 1. CSV 데이터 기반 차트 생성
+    // --- 1. CSV 데이터 기반 차트 생성 (Chart.js) ---
     Papa.parse(CSV_DATA_PATH, {
         download: true,
         header: true,
         complete: (results) => {
-            const data = results.data.filter(row => row.show_id); // 유효한 데이터 행인지 확인
+            const data = results.data.filter(row => row.show_id);
             console.log('CSV Data loaded and parsed:', data);
             
             createBarChart(data);
@@ -17,38 +15,71 @@ document.addEventListener('DOMContentLoaded', () => {
             createPieChart(data);
             createHistogram(data);
         },
-        error: (error) => {
-            console.error('Error parsing CSV:', error);
-        }
+        error: (error) => console.error('Error parsing CSV:', error)
     });
 
-    // 2. JSON 데이터 기반 차트 생성
+    // --- 2. JSON 데이터 기반 차트 생성 (Google Charts) ---
     fetch(JSON_DATA_PATH)
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then(data => {
             console.log('JSON Data loaded:', data);
-            createTreemapChart(data);
-            createSunburstChart(data);
+            createGoogleTreemapChart(data);
         })
-        .catch(error => {
-            console.error('Error fetching or parsing JSON:', error);
-        });
+        .catch(error => console.error('Error fetching or parsing JSON:', error));
 
-    // --- 차트 생성 함수들 ---
+    // --- Google Charts 생성 함수 ---
+    function createGoogleTreemapChart(jsonData) {
+        google.charts.load('current', {'packages':['treemap']});
+        google.charts.setOnLoadCallback(drawChart);
 
+        function drawChart() {
+            const dataTable = new google.visualization.DataTable();
+            dataTable.addColumn('string', 'ID');
+            dataTable.addColumn('string', 'Parent');
+            dataTable.addColumn('number', 'Count');
+
+            // JSON 데이터를 Google DataTable 형식으로 변환
+            const rows = [];
+            function flattenData(node, parent) {
+                rows.push([node.name, parent, node.value]);
+                if (node.children) {
+                    node.children.forEach(child => flattenData(child, node.name));
+                }
+            }
+            flattenData(jsonData, null);
+            
+            dataTable.addRows(rows);
+
+            const options = {
+                minColor: '#363636',
+                midColor: '#a12424',
+                maxColor: '#d22d2d',
+                headerHeight: 25,
+                fontColor: 'white',
+                showScale: true,
+                generateTooltip: (row, size, value) => {
+                    const label = dataTable.getValue(row, 0);
+                    return `<div style="background:black; color:white; padding:10px; border-style:solid; border-width:1px;">
+                        <b>${label}</b>: ${size.toLocaleString()}
+                    </div>`;
+                }
+            };
+
+            const chart = new google.visualization.TreeMap(document.getElementById('treemapChart'));
+            chart.draw(dataTable, options);
+        }
+    }
+
+    // --- 기존 Chart.js 생성 함수들 ---
     function createBarChart(data) {
         const countryCounts = data.reduce((acc, row) => {
             if (row.country) {
                 const countries = row.country.split(',').map(c => c.trim());
                 countries.forEach(country => {
-                    if (country) {
-                        acc[country] = (acc[country] || 0) + 1;
-                    }
+                    if (country) acc[country] = (acc[country] || 0) + 1;
                 });
             }
             return acc;
@@ -74,9 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createLineChart(data) {
         const yearCounts = data.reduce((acc, row) => {
             const year = parseInt(row.release_year, 10);
-            if (year && year >= 2000) {
-                acc[year] = (acc[year] || 0) + 1;
-            }
+            if (year && year >= 2000) acc[year] = (acc[year] || 0) + 1;
             return acc;
         }, {});
         const sortedYears = Object.entries(yearCounts).sort(([a], [b]) => a - b);
@@ -99,9 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createPieChart(data) {
         const typeCounts = data.reduce((acc, row) => {
-            if (row.type) {
-                acc[row.type] = (acc[row.type] || 0) + 1;
-            }
+            if (row.type) acc[row.type] = (acc[row.type] || 0) + 1;
             return acc;
         }, {});
         const ctx = document.getElementById('pieChart').getContext('2d');
@@ -145,98 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '영화 상영 시간 분포 (분)' } }, scales: { x: { ticks: { maxRotation: 90, minRotation: 45 } }, y: { beginAtZero: true } } }
-        });
-    }
-
-    // --- 최종 수정된 부분 ---
-    // 트리맵 및 선버스트 차트 생성 (완전한 JSON 데이터 사용)
-    function createTreemapChart(data) {
-        const ctx = document.getElementById('treemapChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'treemap',
-            data: {
-                datasets: [{
-                    label: '콘텐츠 분포',
-                    tree: data.children,
-                    key: 'value',
-                    spacing: 1,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.9)',
-                    backgroundColor: (context) => {
-                        if (context.type !== 'node' || !context.raw) return;
-                        const node = context.raw;
-                        const parentName = node.parent;
-                        if (parentName === 'netflix') {
-                            return node.g === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
-                        } else if (parentName === 'Movie') {
-                            return 'rgba(210, 45, 45, 0.6)';
-                        } else if (parentName === 'TV Show') {
-                            return 'rgba(54, 54, 54, 0.6)';
-                        }
-                        return 'rgba(180, 180, 180, 0.7)';
-                    }
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: '콘텐츠 타입 및 등급별 분포 (Treemap)' },
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                const { g, v } = context.raw;
-                                return g ? `${g}: ${v.toLocaleString()}` : '';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function createSunburstChart(data) {
-        const ctx = document.getElementById('sunburstChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'sunburst',
-            data: {
-                datasets: [{
-                    label: '콘텐츠 분포',
-                    tree: data.children,
-                    key: 'value',
-                    backgroundColor: (context) => {
-                        const node = context.raw;
-                        if (!node) return null;
-                        const parentName = node.parent;
-                        if (!parentName) {
-                            return node.g === 'Movie' ? 'rgba(210, 45, 45, 0.8)' : 'rgba(54, 54, 54, 0.8)';
-                        } else if (parentName === 'Movie') {
-                            return 'rgba(210, 45, 45, 0.6)';
-                        } else if (parentName === 'TV Show') {
-                            return 'rgba(54, 54, 54, 0.6)';
-                        }
-                        return 'rgba(180, 180, 180, 0.7)';
-                    },
-                    borderColor: 'rgba(255, 255, 255, 0.9)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: { display: true, text: '콘텐츠 타입 및 등급별 분포 (Sunburst)' },
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                const { g, v } = context.raw;
-                                return g ? `${g}: ${v.toLocaleString()}` : '';
-                            }
-                        }
-                    }
-                }
-            }
         });
     }
 });
