@@ -17,74 +17,67 @@ document.addEventListener('DOMContentLoaded', () => {
         error: (error) => console.error('Error parsing CSV:', error)
     });
 
-    // --- 2. Google Charts 및 JSON 데이터 로딩을 위한 Promise 설정 ---
+    // --- 2. Google Charts 로드 및 콜백 함수 지정 ---
+    // Google Charts 라이브러리를 로드합니다.
+    google.charts.load('current', { 'packages': ['treemap'] });
+    // 라이브러리가 준비되면 drawTreemapChart 함수를 실행하도록 콜백을 설정합니다.
+    google.charts.setOnLoadCallback(drawTreemapChart);
 
-    // Promise #1: Google Charts 라이브러리가 로드되면 resolve
-    const googleChartsPromise = new Promise(resolve => {
-        google.charts.load('current', { 'packages': ['treemap'] });
-        google.charts.setOnLoadCallback(resolve);
-    });
+    /**
+     * Google Charts 라이브러리가 완전히 로드된 후 실행되는 함수.
+     * 이 함수 안에서 데이터를 가져오고 차트를 그립니다.
+     */
+    function drawTreemapChart() {
+        fetch(JSON_DATA_PATH)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(jsonData => {
+                console.log('Google Charts is ready and JSON data is loaded.');
+                const dataTable = new google.visualization.DataTable();
+                dataTable.addColumn('string', 'ID');
+                dataTable.addColumn('string', 'Parent');
+                dataTable.addColumn('number', 'Count');
 
-    // Promise #2: JSON 데이터가 fetch되면 resolve
-    const jsonDataPromise = fetch(JSON_DATA_PATH)
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            return response.json();
-        });
+                const rows = [];
+                rows.push([jsonData.name, null, 0]); // 최상위 노드
 
-    // --- 3. 두 Promise가 모두 완료되면 차트 그리기 실행 ---
-    Promise.all([googleChartsPromise, jsonDataPromise])
-        .then(([, jsonData]) => { // 결과 배열에서 jsonData만 사용
-            console.log('Google Charts and JSON data are both ready.');
-            drawGoogleTreemapChart(jsonData);
-        })
-        .catch(error => console.error('An error occurred during setup:', error));
-
-    // --- Google Charts 생성 함수 (최종) ---
-    function drawGoogleTreemapChart(jsonData) {
-        const dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('string', 'ID');
-        dataTable.addColumn('string', 'Parent');
-        dataTable.addColumn('number', 'Count (for size)');
-        
-        const rows = [];
-        // 최상위 노드 추가
-        rows.push([jsonData.name, null, 0]);
-
-        // 자식 노드들을 재귀적으로 추가
-        jsonData.children.forEach(typeNode => {
-            rows.push([typeNode.name, jsonData.name, typeNode.value]);
-            if (typeNode.children) {
-                typeNode.children.forEach(ratingNode => {
-                    rows.push([ratingNode.name, typeNode.name, ratingNode.value]);
+                jsonData.children.forEach(typeNode => {
+                    rows.push([typeNode.name, jsonData.name, typeNode.value]); // 1레벨 노드
+                    if (typeNode.children) {
+                        typeNode.children.forEach(ratingNode => {
+                            rows.push([ratingNode.name, typeNode.name, ratingNode.value]); // 2레벨 노드
+                        });
+                    }
                 });
-            }
-        });
-        
-        dataTable.addRows(rows);
+                
+                dataTable.addRows(rows);
 
-        const options = {
-            minColor: '#f0f0f0',
-            midColor: '#d22d2d',
-            maxColor: '#a12424',
-            headerHeight: 25,
-            fontColor: 'white',
-            showScale: true,
-            highlightOnMouseOver: true,
-            generateTooltip: (row, size, value) => {
-                const label = dataTable.getValue(row, 0);
-                if (dataTable.getValue(row, 1) === null) return ''; // 최상위 노드 툴팁 방지
-                return `<div style="background:black; color:white; padding:10px; border-style:solid; border-width:1px;">
-                    <b>${label}</b>: ${size.toLocaleString()}
-                </div>`;
-            }
-        };
+                const options = {
+                    minColor: '#f0f0f0',
+                    midColor: '#d22d2d',
+                    maxColor: '#a12424',
+                    headerHeight: 25,
+                    fontColor: 'white',
+                    showScale: true,
+                    highlightOnMouseOver: true,
+                    generateTooltip: (row, size) => {
+                        const label = dataTable.getValue(row, 0);
+                        if (dataTable.getValue(row, 1) === null) return '';
+                        return `<div style="background:black; color:white; padding:10px; border-style:solid; border-width:1px;">
+                            <b>${label}</b>: ${size.toLocaleString()}
+                        </div>`;
+                    }
+                };
 
-        const chart = new google.visualization.TreeMap(document.getElementById('treemapChart'));
-        chart.draw(dataTable, options);
+                const chart = new google.visualization.TreeMap(document.getElementById('treemapChart'));
+                chart.draw(dataTable, options);
+            })
+            .catch(error => console.error('Error during Google Chart setup:', error));
     }
 
-    // --- 기존 Chart.js 생성 함수들 ---
+    // --- 기존 Chart.js 생성 함수들 (변경 없음) ---
     function createBarChart(data) {
         const countryCounts = data.reduce((acc, row) => {
             if (row.country) {
