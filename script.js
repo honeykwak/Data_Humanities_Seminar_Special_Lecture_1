@@ -47,7 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     rows.push([typeNode.name, jsonData.name, typeNode.value]); // 1레벨 노드
                     if (typeNode.children) {
                         typeNode.children.forEach(ratingNode => {
-                            rows.push([ratingNode.name, typeNode.name, ratingNode.value]); // 2레벨 노드
+                            // [수정] ID가 중복되지 않도록 부모 노드의 이름과 현재 노드의 이름을 조합하여 고유 ID 생성
+                            const uniqueId = `${typeNode.name} - ${ratingNode.name}`;
+                            rows.push([uniqueId, typeNode.name, ratingNode.value]); // 2레벨 노드
                         });
                     }
                 });
