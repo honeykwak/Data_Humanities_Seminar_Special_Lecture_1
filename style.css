@@ -66,6 +66,11 @@ article h3 {
     width: 100%;
 }
 
+/* Treemap 차트 컨테이너의 높이를 내용에 맞게 자동 조절 */
+#treemap-container-wrapper {
+    height: auto;
+}
+
 pre {
     background-color: #2d2d2d;
     color: #f8f8f2;
